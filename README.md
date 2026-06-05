@@ -52,11 +52,38 @@ These scripts fill those gaps.
 All scripts follow the same pattern:
 
 ```powershell
-.\<ScriptName>.ps1 -Organization "YourOrg" -PersonalAccessToken "your-pat-here" [options]
+.\<ScriptName>.ps1 -Organization "YourOrg" [options]
 ```
 
 Use `-Verbose` on any script to see detailed progress output.  
 All scripts automatically export a timestamped CSV to the `output/` folder. Use `-ExportCsv "path\to\file.csv"` to override the output location.
+
+### Authentication
+
+All scripts support three authentication methods — choose the one that suits your workflow:
+
+**Option 1 — Environment variable (recommended)**
+Set once per session, then run any script without passing the token each time:
+```powershell
+$env:ADO_PAT = "your-pat-here"
+.\Get-ADOOrgBranchCreators.ps1 -Organization "YourOrg"
+.\Get-ADOProjectList.ps1 -Organization "YourOrg"
+```
+
+**Option 2 — Explicit parameter**
+Pass the token directly on each call:
+```powershell
+.\Get-ADOOrgBranchCreators.ps1 -Organization "YourOrg" -PersonalAccessToken "your-pat-here"
+```
+
+**Option 3 — Secure prompt**
+Avoids the token ever appearing in your terminal history:
+```powershell
+$env:ADO_PAT = Read-Host "Enter PAT"
+.\Get-ADOOrgBranchCreators.ps1 -Organization "YourOrg"
+```
+
+> If neither `-PersonalAccessToken` nor `$env:ADO_PAT` is set, the script will exit with a clear error message.
 
 ### Output Folder
 
@@ -98,17 +125,21 @@ Lists all projects in an Azure DevOps organization, including their IDs, state, 
 | Parameter | Required | Description |
 |---|---|---|
 | `-Organization` | ✅ | Azure DevOps organization name |
-| `-PersonalAccessToken` | ✅ | PAT with Project read access |
+| `-PersonalAccessToken` | ➖ | PAT with Project read access. Or set `$env:ADO_PAT` |
 | `-ExportCsv` | ➖ | Custom CSV path. Defaults to `output\ADO_ProjectList_<timestamp>.csv` |
 
 **Examples:**
 
 ```powershell
-# List all projects
-.\Get-ADOProjectList.ps1 -Organization "MyCompany" -PersonalAccessToken "xxxx"
+# Using environment variable (recommended)
+$env:ADO_PAT = "your-pat-here"
+.\Get-ADOProjectList.ps1 -Organization "MyCompany"
 
-# Export to CSV
-.\Get-ADOProjectList.ps1 -Organization "MyCompany" -PersonalAccessToken "xxxx" -ExportCsv ".\projects.csv"
+# Using explicit parameter
+.\Get-ADOProjectList.ps1 -Organization "MyCompany" -PersonalAccessToken "your-pat-here"
+
+# Export to a custom path
+.\Get-ADOProjectList.ps1 -Organization "MyCompany" -ExportCsv ".\projects.csv"
 ```
 
 ---
@@ -125,18 +156,22 @@ Lists all repositories in a project, including their IDs, default branch, size, 
 |---|---|---|
 | `-Organization` | ✅ | Azure DevOps organization name |
 | `-Project` | ✅ | Project name or ID |
-| `-PersonalAccessToken` | ✅ | PAT with Code read access |
+| `-PersonalAccessToken` | ➖ | PAT with Code read access. Or set `$env:ADO_PAT` |
 | `-IncludeDisabled` | ➖ | Include disabled repositories |
 | `-ExportCsv` | ➖ | Custom CSV path. Defaults to `output\ADO_RepositoryList_<timestamp>.csv` |
 
 **Examples:**
 
 ```powershell
-# List active repos in a project
-.\Get-ADORepositoryList.ps1 -Organization "MyCompany" -Project "TeamAlpha" -PersonalAccessToken "xxxx"
+# Using environment variable (recommended)
+$env:ADO_PAT = "your-pat-here"
+.\Get-ADORepositoryList.ps1 -Organization "MyCompany" -Project "TeamAlpha"
 
-# Include disabled repos and export
-.\Get-ADORepositoryList.ps1 -Organization "MyCompany" -Project "TeamAlpha" -PersonalAccessToken "xxxx" -IncludeDisabled -ExportCsv ".\repos.csv"
+# Using explicit parameter
+.\Get-ADORepositoryList.ps1 -Organization "MyCompany" -Project "TeamAlpha" -PersonalAccessToken "your-pat-here"
+
+# Include disabled repos and export to custom path
+.\Get-ADORepositoryList.ps1 -Organization "MyCompany" -Project "TeamAlpha" -IncludeDisabled -ExportCsv ".\repos.csv"
 ```
 
 ---
@@ -154,21 +189,25 @@ Lists every branch in a repository alongside the name and email of the person wh
 | `-Organization` | ✅ | Azure DevOps organization name |
 | `-Project` | ✅ | Project name or ID |
 | `-RepositoryId` | ✅ | Repository name or ID |
-| `-PersonalAccessToken` | ✅ | PAT with Code read access |
+| `-PersonalAccessToken` | ➖ | PAT with Code read access. Or set `$env:ADO_PAT` |
 | `-Filter` | ➖ | Wildcard filter on branch name. Example: `feature/*` |
 | `-ExportCsv` | ➖ | Custom CSV path. Defaults to `output\ADO_BranchCreators_<timestamp>.csv` |
 
 **Examples:**
 
 ```powershell
-# All branches with creators
-.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx"
+# Using environment variable (recommended)
+$env:ADO_PAT = "your-pat-here"
+.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo"
+
+# Using explicit parameter
+.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "your-pat-here"
 
 # Only feature branches
-.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx" -Filter "feature/*"
+.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -Filter "feature/*"
 
-# Export to CSV
-.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx" -ExportCsv ".\branches.csv"
+# Export to custom path
+.\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -ExportCsv ".\branches.csv"
 ```
 
 ---
@@ -184,7 +223,7 @@ Scans every project and repository in an organization and produces a single CSV 
 | Parameter | Required | Description |
 |---|---|---|
 | `-Organization` | ✅ | Azure DevOps organization name |
-| `-PersonalAccessToken` | ✅ | PAT with Project and Code read access |
+| `-PersonalAccessToken` | ➖ | PAT with Project and Code read access. Or set `$env:ADO_PAT` |
 | `-OutputPath` | ➖ | Custom CSV path. Defaults to `output\ADO_BranchCreators_Report_<timestamp>.csv` |
 | `-ProjectFilter` | ➖ | Array of project names to scan. Omit to scan all. Example: `@("ProjectA","ProjectB")` |
 | `-BranchFilter` | ➖ | Wildcard filter on branch name. Example: `feature/*` |
@@ -192,17 +231,21 @@ Scans every project and repository in an organization and produces a single CSV 
 **Examples:**
 
 ```powershell
-# Full org report (default timestamped filename)
-.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -PersonalAccessToken "xxxx"
+# Using environment variable (recommended)
+$env:ADO_PAT = "your-pat-here"
+.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany"
+
+# Using explicit parameter
+.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -PersonalAccessToken "your-pat-here"
 
 # Specific output path
-.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -PersonalAccessToken "xxxx" -OutputPath "C:\Reports\branches.csv"
+.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -OutputPath "C:\Reports\branches.csv"
 
 # Scan only selected projects
-.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -PersonalAccessToken "xxxx" -ProjectFilter @("TeamAlpha", "TeamBeta")
+.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -ProjectFilter @("TeamAlpha", "TeamBeta")
 
 # Only feature branches across the org
-.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -PersonalAccessToken "xxxx" -BranchFilter "feature/*"
+.\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany" -BranchFilter "feature/*"
 ```
 
 > **Note:** Large organizations may take several minutes. Progress is printed per project during the run.
@@ -222,7 +265,7 @@ Retrieves pull requests from a repository with flexible filtering by status, dat
 | `-Organization` | ✅ | Azure DevOps organization name |
 | `-Project` | ✅ | Project name or ID |
 | `-RepositoryId` | ✅ | Repository name or ID |
-| `-PersonalAccessToken` | ✅ | PAT with Code read access |
+| `-PersonalAccessToken` | ➖ | PAT with Code read access. Or set `$env:ADO_PAT` |
 | `-Status` | ➖ | `Active`, `Abandoned`, `Completed`, or `All` (default: `All`) |
 | `-StartDate` | ➖ | PRs created on or after this date. Format: `YYYY-MM-DD` |
 | `-EndDate` | ➖ | PRs created on or before this date. Format: `YYYY-MM-DD` |
@@ -233,17 +276,18 @@ Retrieves pull requests from a repository with flexible filtering by status, dat
 **Examples:**
 
 ```powershell
-# All PRs in a repo
-.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx"
+# Using environment variable (recommended)
+$env:ADO_PAT = "your-pat-here"
+.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo"
 
 # Active PRs targeting main
-.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx" -Status "Active" -TargetBranch "main"
+.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -Status "Active" -TargetBranch "main"
 
 # PRs created in Q1 2024, exported to CSV
-.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx" -StartDate "2024-01-01" -EndDate "2024-03-31" -ExportCsv ".\prs_q1_2024.csv"
+.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -StartDate "2024-01-01" -EndDate "2024-03-31" -ExportCsv ".\prs_q1_2024.csv"
 
 # PRs by a specific person
-.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -PersonalAccessToken "xxxx" -CreatedBy "jane.doe@company.com"
+.\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "TeamAlpha" -RepositoryId "MyRepo" -CreatedBy "jane.doe@company.com"
 ```
 
 ---
@@ -252,7 +296,8 @@ Retrieves pull requests from a repository with flexible filtering by status, dat
 
 - **Rotate your PAT** if it was ever stored in a script file or committed to source control.
 - Use the **minimum required scopes** when creating a PAT — never use Full Access.
-- PATs should be treated like passwords. Store them in a secrets manager (Azure Key Vault, 1Password, etc.) rather than in plain text files.
+- PATs should be treated like passwords. Use `$env:ADO_PAT` in your session or store them in a secrets manager (Azure Key Vault, 1Password, etc.) — never hardcode them in scripts.
+- `$env:ADO_PAT` is session-scoped and disappears when the terminal is closed — it is never written to disk.
 - CSV exports may contain email addresses and organizational data. Handle them accordingly.
 
 ---
