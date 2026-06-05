@@ -22,6 +22,8 @@
 
 .PARAMETER PersonalAccessToken
     A Personal Access Token (PAT) with at least Read access to Code (Repos).
+    If omitted, the script will use the $env:ADO_PAT environment variable.
+    Recommended: set $env:ADO_PAT in your session instead of passing the token directly.
 
 .PARAMETER IncludeDisabled
     Switch. When specified, includes disabled repositories in the results.
@@ -41,6 +43,12 @@
 
     Lists all repositories including disabled ones and exports to CSV.
 
+.EXAMPLE
+    $env:ADO_PAT = "your-pat-here"
+    .\Get-ADORepositoryList.ps1 -Organization "MyCompany" -Project "MyProject"
+
+    Uses the environment variable for authentication — no need to pass the token directly.
+
 .NOTES
     Required PAT Scopes: Code > Read
     API Version        : 7.1
@@ -58,8 +66,7 @@ param (
     [ValidateNotNullOrEmpty()]
     [string]$Project,
 
-    [Parameter(Mandatory, HelpMessage = "Personal Access Token with Code read access")]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(HelpMessage = "Personal Access Token with Code read access. Or set `$env:ADO_PAT")]
     [string]$PersonalAccessToken,
 
     [Parameter(HelpMessage = "Include disabled repositories in results")]
@@ -71,6 +78,19 @@ param (
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# ---------------------------------------------------------------------------
+# Resolve PAT
+# ---------------------------------------------------------------------------
+if (-not $PersonalAccessToken) {
+    if ($env:ADO_PAT) {
+        $PersonalAccessToken = $env:ADO_PAT
+        Write-Verbose "Using PAT from environment variable `$env:ADO_PAT"
+    } else {
+        Write-Error "No PAT provided. Pass -PersonalAccessToken or set `$env:ADO_PAT before running."
+        return
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Auth header

@@ -26,6 +26,8 @@
 
 .PARAMETER PersonalAccessToken
     A Personal Access Token (PAT) with at least Read access to Code (Repos).
+    If omitted, the script will use the $env:ADO_PAT environment variable.
+    Recommended: set $env:ADO_PAT in your session instead of passing the token directly.
 
 .PARAMETER Filter
     Optional. Filter branches by name pattern (wildcard supported).
@@ -50,6 +52,12 @@
 
     Lists all branches and exports the results to a CSV file.
 
+.EXAMPLE
+    $env:ADO_PAT = "your-pat-here"
+    .\Get-ADOBranchCreators.ps1 -Organization "MyCompany" -Project "MyProject" -RepositoryId "MyRepo"
+
+    Uses the environment variable for authentication — no need to pass the token directly.
+
 .NOTES
     Required PAT Scopes: Code > Read
     API Version        : 7.1
@@ -71,8 +79,7 @@ param (
     [ValidateNotNullOrEmpty()]
     [string]$RepositoryId,
 
-    [Parameter(Mandatory, HelpMessage = "Personal Access Token with Code read access")]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(HelpMessage = "Personal Access Token with Code read access. Or set `$env:ADO_PAT")]
     [string]$PersonalAccessToken,
 
     [Parameter(HelpMessage = "Filter branches by name pattern (wildcard). Example: 'feature/*'")]
@@ -84,6 +91,19 @@ param (
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# ---------------------------------------------------------------------------
+# Resolve PAT
+# ---------------------------------------------------------------------------
+if (-not $PersonalAccessToken) {
+    if ($env:ADO_PAT) {
+        $PersonalAccessToken = $env:ADO_PAT
+        Write-Verbose "Using PAT from environment variable `$env:ADO_PAT"
+    } else {
+        Write-Error "No PAT provided. Pass -PersonalAccessToken or set `$env:ADO_PAT before running."
+        return
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Auth header

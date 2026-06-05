@@ -26,6 +26,8 @@
 
 .PARAMETER PersonalAccessToken
     A Personal Access Token (PAT) with at least Read access to Code (Repos).
+    If omitted, the script will use the $env:ADO_PAT environment variable.
+    Recommended: set $env:ADO_PAT in your session instead of passing the token directly.
 
 .PARAMETER Status
     Filter by pull request status.
@@ -56,6 +58,12 @@
     .\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "MyProject" -RepositoryId "MyRepo" -PersonalAccessToken "your-pat-here"
 
     Retrieves all pull requests (any status) for the specified repository.
+
+.EXAMPLE
+    $env:ADO_PAT = "your-pat-here"
+    .\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "MyProject" -RepositoryId "MyRepo"
+
+    Uses the environment variable for authentication — no need to pass the token directly.
 
 .EXAMPLE
     .\Get-ADOPullRequests.ps1 -Organization "MyCompany" -Project "MyProject" -RepositoryId "MyRepo" -PersonalAccessToken "your-pat-here" -Status "Active"
@@ -96,8 +104,7 @@ param (
     [ValidateNotNullOrEmpty()]
     [string]$RepositoryId,
 
-    [Parameter(Mandatory, HelpMessage = "Personal Access Token with Code read access")]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(HelpMessage = "Personal Access Token with Code read access. Or set `$env:ADO_PAT")]
     [string]$PersonalAccessToken,
 
     [Parameter(HelpMessage = "Filter by PR status: Active, Abandoned, Completed, All")]
@@ -122,6 +129,19 @@ param (
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# ---------------------------------------------------------------------------
+# Resolve PAT
+# ---------------------------------------------------------------------------
+if (-not $PersonalAccessToken) {
+    if ($env:ADO_PAT) {
+        $PersonalAccessToken = $env:ADO_PAT
+        Write-Verbose "Using PAT from environment variable `$env:ADO_PAT"
+    } else {
+        Write-Error "No PAT provided. Pass -PersonalAccessToken or set `$env:ADO_PAT before running."
+        return
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Validate and normalise dates

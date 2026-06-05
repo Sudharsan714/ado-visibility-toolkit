@@ -21,6 +21,8 @@
 
 .PARAMETER PersonalAccessToken
     A Personal Access Token (PAT) with Read access to Projects and Code (Repos).
+    If omitted, the script will use the $env:ADO_PAT environment variable.
+    Recommended: set $env:ADO_PAT in your session instead of passing the token directly.
 
 .PARAMETER OutputPath
     Path for the exported CSV report.
@@ -50,6 +52,12 @@
 
     Scans only the specified projects.
 
+.EXAMPLE
+    $env:ADO_PAT = "your-pat-here"
+    .\Get-ADOOrgBranchCreators.ps1 -Organization "MyCompany"
+
+    Uses the environment variable for authentication — no need to pass the token directly.
+
 .NOTES
     Required PAT Scopes: Project and Team > Read, Code > Read
     API Version        : 7.1
@@ -65,8 +73,7 @@ param (
     [ValidateNotNullOrEmpty()]
     [string]$Organization,
 
-    [Parameter(Mandatory, HelpMessage = "Personal Access Token with Project and Code read access")]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(HelpMessage = "Personal Access Token with Project and Code read access. Or set `$env:ADO_PAT")]
     [string]$PersonalAccessToken,
 
     [Parameter(HelpMessage = "Output path for the CSV report. Defaults to timestamped file in current directory.")]
@@ -81,6 +88,19 @@ param (
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# ---------------------------------------------------------------------------
+# Resolve PAT
+# ---------------------------------------------------------------------------
+if (-not $PersonalAccessToken) {
+    if ($env:ADO_PAT) {
+        $PersonalAccessToken = $env:ADO_PAT
+        Write-Verbose "Using PAT from environment variable `$env:ADO_PAT"
+    } else {
+        Write-Error "No PAT provided. Pass -PersonalAccessToken or set `$env:ADO_PAT before running."
+        return
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Default output path
