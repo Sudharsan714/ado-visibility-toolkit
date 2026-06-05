@@ -1,0 +1,6 @@
+# -----------------------------------------------
+# AzureDevOps-Tools .gitignore
+# -----------------------------------------------
+
+# CSV exports - never commit report output
+*.csv

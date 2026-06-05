@@ -1,5 +1,3 @@
-# ado-visibility-toolkit
-PowerShell toolkit that surfaces hidden Azure DevOps data — branch creators, repo IDs, org-wide reports — via the REST API.
 # AzureDevOps-Tools
 
 A collection of PowerShell scripts that expose information from Azure DevOps via the REST API — information that is either hidden or inaccessible through the standard UI.
